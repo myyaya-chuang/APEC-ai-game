@@ -534,6 +534,13 @@ html, body {
         <div class="char-name">香港金融顾问</div>
         <div class="char-attr attr-efficiency">效率 +3</div>
       </div>
+
+      <!-- 用户素材替换点：第5个人物卡 -->
+      <div class="char-card" data-id="supply" data-attr="supply" onclick="toggleChar(this)">
+        <img class="char-avatar" src="assets/images/char-supply chain.png" alt="供应链协调员">
+        <div class="char-name">佛山供应链协调员</div>
+        <div class="char-attr attr-efficiency">效率 +3</div>
+      </div>
     </div>
 
     <div class="counter-text" id="charCounter">已选 0 / 3</div>
@@ -608,17 +615,17 @@ html, body {
 <!-- ============================================================ -->
 <!-- 用户素材替换点：BGM 背景音乐                                     -->
 <!-- 替换 src 路径即可切换音乐                                       -->
-<audio id="bgm" loop preload="none" src="assets/audio/bgm.mp3"></audio>
+<audio id="bgm" loop preload="none" src="assets/audio/background music.mp3"></audio>
 
 <!-- ============================================================ -->
 <!-- 用户素材替换点：音效文件路径                                     -->
 <!-- 替换下方 data-src 属性即可切换音效                              -->
 <!-- ============================================================ -->
-<audio id="sfxClick" preload="none" src="assets/audio/click.mp3"></audio>
-<audio id="sfxSelect" preload="none" src="assets/audio/select.mp3"></audio>
-<audio id="sfxAlarm" preload="none" src="assets/audio/alarm.mp3"></audio>
-<audio id="sfxSuccess" preload="none" src="assets/audio/success.mp3"></audio>
-<audio id="sfxPoster" preload="none" src="assets/audio/poster.mp3"></audio>
+<audio id="sfxClick" preload="none" src="assets/audio/Blip.mp3"></audio>
+<audio id="sfxSelect" preload="none" src="assets/audio/Pickup.mp3"></audio>
+<audio id="sfxAlarm" preload="none" src="assets/audio/Alarm.mp3"></audio>
+<audio id="sfxSuccess" preload="none" src="assets/audio/Powerup.mp3"></audio>
+<audio id="sfxPoster" preload="none" src="assets/audio/Coin.mp3"></audio>
 
 <!-- ============================================================ -->
 <!-- ============================================================ -->
@@ -646,7 +653,8 @@ const ASSETS = {
     ai:      { id: 'ai',      name: '深圳AI工程师', attr: 'ai',         label: 'AI +3',      img: 'assets/images/char-ai.png' },
     factory: { id: 'factory', name: '东莞制造厂长', attr: 'factory',    label: '产能 +3',     img: 'assets/images/char-factory.png' },
     trade:   { id: 'trade',   name: '广州外贸经理', attr: 'trade',      label: '国际化 +3',    img: 'assets/images/char-trade.png' },
-    finance: { id: 'finance', name: '香港金融顾问', attr: 'efficiency', label: '效率 +3',      img: 'assets/images/char-finance.png' },
+    finance: { id: 'finance', name: '香港金融顾问',     attr: 'efficiency', label: '效率 +3',      img: 'assets/images/char-finance.png' },
+    supply:  { id: 'supply',  name: '佛山供应链协调员', attr: 'efficiency', label: '效率 +3',      img: 'assets/images/char-supply chain.png' },
   },
   // 机器人头像
   robot: 'assets/images/char-robot.png',
