@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>APEC AI 特别行动队</title>
+<!-- ============================================================ -->
+<!-- 像素字体：Press Start 2P（Google Fonts）                        -->
+<!-- 如需替换字体，修改下方 @import 和 --font-pixel 变量              -->
+<!-- ============================================================ -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* ============================================================ */
+/* 颜色变量 —— 修改这里改变整体配色                                */
+/* ============================================================ */
+:root {
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-chinese: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --bg: #0d0d1a;
+  --card-bg: #1a1a35;
+  --accent: #00e5ff;
+  --accent-glow: rgba(0, 229, 255, 0.3);
+  --gold: #ffd740;
+  --green: #76ff03;
+  --red: #ff5252;
+  --orange: #ff9100;
+  --text: #e0e0e0;
+  --text-dim: #888;
+  --border: #333;
+}
+
+/* ============================================================ */
+/* 基础重置                                                       */
+/* ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; min-height: 100vh; min-height: 100dvh;
+  background: #000;
+  font-family: var(--font-chinese);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+  overflow-x: hidden;
+}
+
+/* ============================================================ */
+/* 游戏容器 —— 手机全屏 / 桌面居中 480px                           */
+/* ============================================================ */
+.game-container {
+  width: 100%; max-width: 480px; min-height: 100vh; min-height: 100dvh;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  /* 像素边框装饰 */
+  box-shadow: 0 0 0 2px var(--border);
+}
+
+/* ============================================================ */
+/* 屏幕切换                                                       */
+/* ============================================================ */
+.screen {
+  position: absolute; top: 0; left: 0;
+  width: 100%; min-height: 100vh; min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px;
+  transition: opacity 0.3s, transform 0.3s;
+}
+.screen.hidden {
+  opacity: 0; pointer-events: none;
+  transform: translateY(10px);
+}
+
+/* ============================================================ */
+/* 通用组件                                                       */
+/* ============================================================ */
+
+/* 像素风按钮 */
+.btn {
+  display: inline-block;
+  padding: 14px 32px;
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  color: #000;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  image-rendering: pixelated;
+  /* 像素阴影 */
+  box-shadow: 4px 4px 0 #005f6b;
+  transition: transform 0.1s, box-shadow 0.1s;
+  min-width: 44px; min-height: 44px;
+}
+.btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #005f6b;
+}
+.btn:disabled {
+  opacity: 0.4; cursor: not-allowed;
+}
+.btn-small {
+  font-size: 10px; padding: 10px 20px;
+}
+.btn-gold {
+  background: var(--gold); box-shadow: 4px 4px 0 #b8960b; color: #000;
+}
+
+/* 像素卡片 */
+.pixel-card {
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  padding: 16px;
+  image-rendering: pixelated;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
+}
+
+/* 标题 */
+.game-title {
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  color: var(--accent);
+  text-align: center;
+  text-shadow: 0 0 10px var(--accent-glow);
+  line-height: 1.6;
+}
+.game-subtitle {
+  font-family: var(--font-chinese);
+  font-size: 14px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* 像素装饰线 */
+.pixel-divider {
+  width: 80%; height: 2px;
+  background: repeating-linear-gradient(90deg, var(--accent) 0, var(--accent) 4px, transparent 4px, transparent 8px);
+  margin: 16px 0;
+}
+
+/* ============================================================ */
+/* BGM 控制按钮（固定定位）                                        */
+/* ============================================================ */
+.bgm-toggle {
+  position: fixed; top: 12px; right: 12px; z-index: 100;
+  width: 40px; height: 40px;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.bgm-toggle.playing { border-color: var(--accent); }
+
+/* ============================================================ */
+/* SCREEN 1 — 接订单                                              */
+/* ============================================================ */
+
+/* 消息气泡 */
+.chat-bubble {
+  background: var(--card-bg);
+  border: 2px solid var(--accent);
+  padding: 16px;
+  max-width: 90%;
+  position: relative;
+  margin-bottom: 24px;
+  box-shadow: 4px 4px 0 rgba(0, 229, 255, 0.15);
+}
+.chat-bubble::after {
+  content: ''; position: absolute; bottom: -10px; left: 20px;
+  width: 0; height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid var(--accent);
+}
+.chat-sender {
+  font-family: var(--font-pixel); font-size: 10px; color: var(--accent);
+  margin-bottom: 8px;
+}
+.chat-body {
+  font-size: 14px; line-height: 1.8;
+}
+.chat-highlight {
+  color: var(--gold); font-weight: bold;
+}
+
+/* APEC logo 装饰 */
+.apec-badge {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 4px 8px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+/* ============================================================ */
+/* SCREEN 2 — 组队选人                                             */
+/* ============================================================ */
+
+.char-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 360px;
+  margin: 12px 0;
+}
+
+.char-card {
+  background: var(--card-bg);
+  border: 3px solid var(--border);
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s;
+  position: relative;
+  min-height: 44px;
+}
+.char-card:active {
+  transform: scale(0.96);
+}
+
+/* ============================================================ */
+/* 用户素材替换点：人物头像 <img> 标签                              */
+/* 修改 src 路径即可替换人物头像                                    */
+/* 图片建议尺寸：80×80px PNG 像素风格                              */
+/* ============================================================ */
+.char-avatar {
+  width: 72px; height: 72px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+.char-name {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--text);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+/* ============================================================ */
+/* 用户素材替换点：属性标签颜色                                     */
+/* 修改各属性的 --attr-color-* 变量即可                            */
+/* ============================================================ */
+:root {
+  --attr-color-ai: #ff5252;
+  --attr-color-factory: #ff9100;
+  --attr-color-trade: #448aff;
+  --attr-color-efficiency: #76ff03;
+}
+
+.char-attr {
+  display: inline-block;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  padding: 2px 6px;
+  color: #000;
+}
+.attr-ai { background: var(--attr-color-ai); }
+.attr-factory { background: var(--attr-color-factory); }
+.attr-trade { background: var(--attr-color-trade); }
+.attr-efficiency { background: var(--attr-color-efficiency); }
+
+/* 选中状态 */
+.char-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+  transform: translateY(-3px);
+}
+.char-card.selected::before {
+  content: '✓';
+  position: absolute; top: 4px; right: 8px;
+  font-family: var(--font-pixel); font-size: 12px; color: var(--accent);
+}
+.char-card.unselectable {
+  opacity: 0.35; cursor: not-allowed;
+}
+
+.counter-text {
+  font-family: var(--font-pixel); font-size: 10px; color: var(--text-dim);
+  text-align: center; margin: 8px 0;
+}
+
+/* ============================================================ */
+/* SCREEN 3 — 危机事件                                             */
+/* ============================================================ */
+
+.event-card {
+  width: 100%; max-width: 380px;
+}
+
+/* ============================================================ */
+/* 用户素材替换点：事件图标（emoji或图片）                           */
+/* 修改 emoji 或替换为 <img> 标签即可                              */
+/* ============================================================ */
+.event-icon {
+  font-size: 48px; text-align: center; margin-bottom: 8px;
+  image-rendering: pixelated;
+}
+
+.event-title {
+  font-family: var(--font-pixel); font-size: 12px; color: var(--red);
+  text-align: center; line-height: 1.6; margin-bottom: 4px;
+}
+.event-desc {
+  font-size: 14px; text-align: center; color: var(--text-dim);
+  margin-bottom: 16px;
+}
+
+.option-btn {
+  display: block; width: 100%;
+  padding: 14px 16px; margin-bottom: 10px;
+  background: var(--card-bg);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  min-height: 44px;
+  font-family: var(--font-chinese);
+}
+.option-btn:active {
+  border-color: var(--accent);
+  background: rgba(0, 229, 255, 0.05);
+}
+.option-tag {
+  font-family: var(--font-pixel); font-size: 7px;
+  padding: 2px 6px; margin-right: 8px; color: #000;
+}
+.tag-ai { background: var(--attr-color-ai); }
+.tag-factory { background: var(--attr-color-factory); }
+.tag-trade { background: var(--attr-color-trade); }
+.tag-efficiency { background: var(--attr-color-efficiency); }
+
+/* 轮次指示器 */
+.round-indicator {
+  display: flex; gap: 8px; justify-content: center; margin-bottom: 16px;
+}
+.round-dot {
+  width: 10px; height: 10px;
+  background: var(--border);
+}
+.round-dot.done { background: var(--accent); }
+.round-dot.current { background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+
+/* 得分弹出 */
+.score-pop {
+  font-family: var(--font-pixel); font-size: 14px; color: var(--gold);
+  text-align: center; padding: 12px;
+  animation: popIn 0.4s ease-out;
+}
+@keyframes popIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ============================================================ */
+/* SCREEN 4 — 交付动画                                             */
+/* ============================================================ */
+
+.anim-stage {
+  text-align: center;
+  animation: fadeIn 0.6s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================ */
+/* 用户素材替换点：动画阶段图片                                     */
+/* 修改 .anim-img 的 src 即可替换动画画面                           */
+/* 图片建议尺寸：300×200px PNG                                     */
+/* ============================================================ */
+.anim-img {
+  width: 200px; height: 200px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  margin-bottom: 16px;
+}
+.anim-text {
+  font-family: var(--font-pixel); font-size: 10px; color: var(--text);
+  line-height: 1.8;
+}
+
+/* 评分星星 */
+.stars {
+  font-size: 40px; text-align: center; margin-top: 12px;
+  animation: popIn 0.4s ease-out;
+}
+
+/* ============================================================ */
+/* SCREEN 5 — 海报 & 结算                                          */
+/* ============================================================ */
+
+.result-title {
+  font-family: var(--font-pixel); font-size: 14px; color: var(--gold);
+  text-align: center; line-height: 1.6;
+  text-shadow: 0 0 15px rgba(255, 215, 64, 0.5);
+  margin-bottom: 8px;
+}
+
+/* ============================================================ */
+/* 用户素材替换点：结算画面机器人图标                                */
+/* 修改 src 即可                                                  */
+/* ============================================================ */
+.result-icon {
+  width: 80px; height: 80px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  margin-bottom: 16px;
+}
+
+.result-score {
+  font-family: var(--font-pixel); font-size: 10px; color: var(--text-dim);
+  text-align: center; margin-bottom: 20px;
+}
+
+.result-buttons {
+  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+}
+
+/* ============================================================ */
+/* Canvas海报（隐藏）                                               */
+/* ============================================================ */
+#posterCanvas {
+  display: none;
+}
+
+/* ============================================================ */
+/* 桌面端适配                                                      */
+/* ============================================================ */
+@media (min-width: 481px) {
+  .game-container {
+    border-left: 2px solid var(--border);
+    border-right: 2px solid var(--border);
+  }
+  .char-card:hover {
+    border-color: #555;
+  }
+  .char-card.selected:hover {
+    border-color: var(--accent);
+  }
+  .option-btn:hover {
+    border-color: #555;
+  }
+}
+
+/* 横屏提示 */
+@media (max-width: 480px) and (orientation: landscape) {
+  .screen { padding: 10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- BGM 控制按钮                                                   -->
+<!-- ============================================================ -->
+<button class="bgm-toggle playing" id="bgmToggle" title="背景音乐 开/关">♪</button>
+
+<!-- ============================================================ -->
+<!-- 游戏容器                                                       -->
+<!-- ============================================================ -->
+<div class="game-container">
+
+  <!-- ========================================================== -->
+  <!-- SCREEN 1：接订单                                              -->
+  <!-- ========================================================== -->
+  <div id="screen1" class="screen">
+    <div class="apec-badge">■ APEC × 深圳</div>
+
+    <!-- 用户素材替换点：Screen1 背景图 -->
+    <!-- 如需添加背景图，在下方取消注释并修改 src -->
+    <!-- <img class="anim-img" src="assets/images/bg-screen1.png" alt=""> -->
+
+    <div class="chat-bubble">
+      <div class="chat-sender">📱 【APEC深圳组委会】</div>
+      <div class="chat-body">
+        <p>急需<span class="chat-highlight">500台</span>AI智能接待助手</p>
+        <p>支持<span class="chat-highlight">21个经济体</span>语言</p>
+        <p style="color: var(--red);">⚠ 72小时后交付</p>
+      </div>
+    </div>
+
+    <button class="btn" id="btnAccept" onclick="acceptOrder()">
+      ▼ 接 单 ！▼
+    </button>
+    <p style="font-size:10px;color:var(--text-dim);margin-top:16px;text-align:center">
+      点击按钮接受任务
+    </p>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- SCREEN 2：组队选人                                             -->
+  <!-- ========================================================== -->
+  <div id="screen2" class="screen hidden">
+    <div class="game-title">组建你的<br>APEC特别行动队</div>
+    <p class="game-subtitle">选择 3 位队友（点击头像选中）</p>
+
+    <div class="char-grid" id="charGrid">
+      <!-- 用户素材替换点：人物卡 -->
+      <!-- 每个人物卡结构：img头像 + 名字 + 属性标签 -->
+      <!-- 修改 src 即可替换人物头像 -->
+      <div class="char-card" data-id="ai" data-attr="ai" onclick="toggleChar(this)">
+        <img class="char-avatar" src="assets/images/char-ai.png" alt="AI工程师">
+        <div class="char-name">深圳AI工程师</div>
+        <div class="char-attr attr-ai">AI +3</div>
+      </div>
+
+      <div class="char-card" data-id="factory" data-attr="factory" onclick="toggleChar(this)">
+        <img class="char-avatar" src="assets/images/char-factory.png" alt="制造厂长">
+        <div class="char-name">东莞制造厂长</div>
+        <div class="char-attr attr-factory">产能 +3</div>
+      </div>
+
+      <div class="char-card" data-id="trade" data-attr="trade" onclick="toggleChar(this)">
+        <img class="char-avatar" src="assets/images/char-trade.png" alt="外贸经理">
+        <div class="char-name">广州外贸经理</div>
+        <div class="char-attr attr-trade">国际化 +3</div>
+      </div>
+
+      <div class="char-card" data-id="finance" data-attr="finance" onclick="toggleChar(this)">
+        <img class="char-avatar" src="assets/images/char-finance.png" alt="金融顾问">
+        <div class="char-name">香港金融顾问</div>
+        <div class="char-attr attr-efficiency">效率 +3</div>
+      </div>
+
+      <!-- 用户素材替换点：第5个人物卡 -->
+      <div class="char-card" data-id="supply" data-attr="supply" onclick="toggleChar(this)">
+        <img class="char-avatar" src="assets/images/char-supply chain.png" alt="供应链协调员">
+        <div class="char-name">佛山供应链协调员</div>
+        <div class="char-attr attr-efficiency">效率 +3</div>
+      </div>
+    </div>
+
+    <div class="counter-text" id="charCounter">已选 0 / 3</div>
+
+    <button class="btn" id="btnTeamConfirm" disabled onclick="confirmTeam()">
+      确认组队！
+    </button>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- SCREEN 3：危机事件                                              -->
+  <!-- ========================================================== -->
+  <div id="screen3" class="screen hidden">
+    <div class="game-title" style="font-size:12px">⚡ 突发危机 ⚡</div>
+
+    <!-- 轮次指示器 -->
+    <div class="round-indicator" id="roundIndicator">
+      <div class="round-dot current"></div>
+      <div class="round-dot"></div>
+      <div class="round-dot"></div>
+    </div>
+
+    <div class="pixel-card event-card" id="eventCard">
+      <div class="event-icon" id="eventIcon">⚠️</div>
+      <div class="event-title" id="eventTitle"></div>
+      <div class="event-desc" id="eventDesc"></div>
+      <div id="eventOptions"></div>
+    </div>
+
+    <!-- 得分弹出 -->
+    <div id="scorePop" style="display:none" class="score-pop"></div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- SCREEN 4：交付动画                                              -->
+  <!-- ========================================================== -->
+  <div id="screen4" class="screen hidden">
+    <div id="animContent" class="anim-stage">
+      <!-- 动画内容由 JS 动态填充 -->
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- SCREEN 5：结算海报                                              -->
+  <!-- ========================================================== -->
+  <div id="screen5" class="screen hidden">
+    <div class="result-title" id="resultTitle"></div>
+
+    <!-- 用户素材替换点：结算画面机器人图标 -->
+    <img class="result-icon" id="resultIcon" src="assets/images/char-robot.png" alt="">
+
+    <div class="result-score" id="resultScore"></div>
+
+    <!-- 用户素材替换点：表情包展示（可选） -->
+    <div id="emojiDisplay" style="margin-bottom:16px"></div>
+
+    <div class="result-buttons">
+      <button class="btn btn-small" onclick="restartGame()">重新挑战</button>
+      <button class="btn btn-small btn-gold" onclick="generatePoster()">分享海报</button>
+    </div>
+  </div>
+
+</div><!-- /game-container -->
+
+<!-- ============================================================ -->
+<!-- Canvas 海报（隐藏）                                              -->
+<!-- ============================================================ -->
+<canvas id="posterCanvas" width="750" height="1000"></canvas>
+
+<!-- ============================================================ -->
+<!-- 音效                                                           -->
+<!-- ============================================================ -->
+<!-- 用户素材替换点：BGM 背景音乐                                     -->
+<!-- 替换 src 路径即可切换音乐                                       -->
+<audio id="bgm" loop preload="none" src="assets/audio/bgm.mp3"></audio>
+
+<!-- ============================================================ -->
+<!-- 用户素材替换点：音效文件路径                                     -->
+<!-- 替换下方 data-src 属性即可切换音效                              -->
+<!-- ============================================================ -->
+<audio id="sfxClick" preload="none" src="assets/audio/click.mp3"></audio>
+<audio id="sfxSelect" preload="none" src="assets/audio/select.mp3"></audio>
+<audio id="sfxAlarm" preload="none" src="assets/audio/alarm.mp3"></audio>
+<audio id="sfxSuccess" preload="none" src="assets/audio/success.mp3"></audio>
+<audio id="sfxPoster" preload="none" src="assets/audio/poster.mp3"></audio>
+
+<!-- ============================================================ -->
+<!-- ============================================================ -->
+<!-- 游戏脚本                                                       -->
+<!-- ============================================================ -->
+<!-- ============================================================ -->
+<script>
+(function() {
+'use strict';
+
+// ==============================================================
+// 素材路径配置（集中管理，替换素材只改这里）                       =
+// ==============================================================
+const ASSETS = {
+  // 背景图（对应 screen1~5）
+  bg: [
+    'assets/images/bg-screen1.png',
+    'assets/images/bg-screen2.png',
+    'assets/images/bg-screen3.png',
+    'assets/images/bg-screen4.png',
+    'assets/images/bg-screen5.png',
+  ],
+  // 人物卡
+  chars: {
+    ai:      { id: 'ai',      name: '深圳AI工程师', attr: 'ai',         label: 'AI +3',      img: 'assets/images/char-ai.png' },
+    factory: { id: 'factory', name: '东莞制造厂长', attr: 'factory',    label: '产能 +3',     img: 'assets/images/char-factory.png' },
+    trade:   { id: 'trade',   name: '广州外贸经理', attr: 'trade',      label: '国际化 +3',    img: 'assets/images/char-trade.png' },
+    finance: { id: 'finance', name: '香港金融顾问',     attr: 'efficiency', label: '效率 +3',      img: 'assets/images/char-finance.png' },
+    supply:  { id: 'supply',  name: '佛山供应链协调员', attr: 'efficiency', label: '效率 +3',      img: 'assets/images/char-supply chain.png' },
+  },
+  // 机器人头像
+  robot: 'assets/images/char-robot.png',
+  // 表情包（10个）
+  emojis: [
+    'assets/images/emoji-01.png', 'assets/images/emoji-02.png',
+    'assets/images/emoji-03.png', 'assets/images/emoji-04.png',
+    'assets/images/emoji-05.png', 'assets/images/emoji-06.png',
+    'assets/images/emoji-07.png', 'assets/images/emoji-08.png',
+    'assets/images/emoji-09.png', 'assets/images/emoji-10.png',
+  ],
+};
+
+// ==============================================================
+// 危机事件数据                                                    =
+// ==============================================================
+// 用户素材替换点：修改/增加事件
+// 每个事件格式：
+// { icon: '表情/emoji', title: '事件标题',
+//   options: [{ text:'选项文字', attr:'属性id或null', baseScore:分数 }] }
+// attr 对应：ai / factory / trade / efficiency / null(无加成)
+const EVENTS = [
+  {
+    icon: '🗣️',
+    title: '韩国代表要求\n韩语实时翻译',
+    options: [
+      { text: '用AI模型训练', attr: 'ai', baseScore: 10 },
+      { text: '外包翻译公司', attr: 'trade', baseScore: 5 },
+      { text: '放弃支持', attr: null, baseScore: 0 },
+    ],
+  },
+  {
+    icon: '🏭',
+    title: '产能不足\n订单量超出预期',
+    options: [
+      { text: '东莞工厂加班', attr: 'factory', baseScore: 10 },
+      { text: '找佛山工厂协作', attr: 'efficiency', baseScore: 5 },
+      { text: '延迟交付', attr: null, baseScore: 0 },
+    ],
+  },
+  {
+    icon: '🌪️',
+    title: '台风影响物流\n运输路线受阻',
+    options: [
+      { text: '香港转运', attr: 'efficiency', baseScore: 10 },
+      { text: '深圳港抢运', attr: 'factory', baseScore: 5 },
+      { text: '无人配送车', attr: 'ai', baseScore: 5 },
+    ],
+  },
+];
+
+// ==============================================================
+// 称号配置                                                        =
+// ==============================================================
+// 用户素材替换点：修改称号或分数阈值
+const TITLES = [
+  { min: 30, name: '🏆 AI出海先锋',   icon: '🚀' },
+  { min: 20, name: '🏆 湾区超级协调官', icon: '🤝' },
+  { min: 10, name: '🏆 APEC最佳搭档',  icon: '⭐' },
+  { min:  0, name: '🏆 深圳AI新势力',  icon: '💪' },
+];
+
+// ==============================================================
+// 游戏状态                                                        =
+// ==============================================================
+let state = {
+  screen: 1,
+  selectedChars: [],    // 选中的角色 id 数组
+  score: 0,
+  eventOrder: [],       // 打乱后的事件索引
+  currentEventIdx: 0,   // 当前事件在 eventOrder 中的位置
+};
+
+// ==============================================================
+// DOM 缓存                                                        =
+// ==============================================================
+const $ = id => document.getElementById(id);
+const screens = {
+  s1: $('screen1'), s2: $('screen2'), s3: $('screen3'),
+  s4: $('screen4'), s5: $('screen5'),
+};
+
+// ==============================================================
+// 音效辅助（静默失败，不影响游戏）                                  =
+// ==============================================================
+function playSfx(id) {
+  try {
+    const el = $(id);
+    if (el) { el.currentTime = 0; el.play().catch(() => {}); }
+  } catch(e) { /* 音效文件不存在时静默忽略 */ }
+}
+
+// BGM 控制
+let bgmPlaying = true;
+$('bgmToggle').addEventListener('click', function() {
+  bgmPlaying = !bgmPlaying;
+  this.classList.toggle('playing', bgmPlaying);
+  const bgm = $('bgm');
+  if (!bgm) return;
+  if (bgmPlaying) {
+    bgm.play().catch(() => {});
+  } else {
+    bgm.pause();
+  }
+});
+
+// 启动 BGM（需用户首次交互后）
+function tryStartBgm() {
+  const bgm = $('bgm');
+  if (bgm && bgmPlaying) {
+    bgm.play().catch(() => {});
+  }
+}
+
+// ==============================================================
+// 屏幕导航                                                        =
+// ==============================================================
+function showScreen(n) {
+  state.screen = n;
+  Object.values(screens).forEach(s => s.classList.add('hidden'));
+  const key = 's' + n;
+  if (screens[key]) screens[key].classList.remove('hidden');
+}
+
+// ==============================================================
+// SCREEN 1 → SCREEN 2                                             =
+// ==============================================================
+window.acceptOrder = function() {
+  playSfx('sfxClick');
+  tryStartBgm();
+  showScreen(2);
+  updateCharCounter();
+};
+
+// ==============================================================
+// SCREEN 2 — 人物选择逻辑                                          =
+// ==============================================================
+window.toggleChar = function(card) {
+  const id = card.dataset.id;
+
+  if (state.selectedChars.includes(id)) {
+    // 取消选中
+    state.selectedChars = state.selectedChars.filter(c => c !== id);
+    card.classList.remove('selected');
+    playSfx('sfxClick');
+  } else if (state.selectedChars.length < 3) {
+    // 选中
+    state.selectedChars.push(id);
+    card.classList.add('selected');
+    playSfx('sfxSelect');
+  }
+
+  updateCharCounter();
+
+  // 更新不可选状态
+  if (state.selectedChars.length >= 3) {
+    document.querySelectorAll('.char-card').forEach(c => {
+      if (!state.selectedChars.includes(c.dataset.id)) {
+        c.classList.add('unselectable');
+      }
+    });
+  } else {
+    document.querySelectorAll('.char-card').forEach(c => {
+      c.classList.remove('unselectable');
+    });
+  }
+
+  $('btnTeamConfirm').disabled = state.selectedChars.length !== 3;
+};
+
+function updateCharCounter() {
+  $('charCounter').textContent = '已选 ' + state.selectedChars.length + ' / 3';
+}
+
+// ==============================================================
+// SCREEN 2 → SCREEN 3                                             =
+// ==============================================================
+window.confirmTeam = function() {
+  if (state.selectedChars.length !== 3) return;
+  playSfx('sfxClick');
+
+  // 打乱事件顺序
+  state.eventOrder = [0, 1, 2].sort(() => Math.random() - 0.5);
+  state.currentEventIdx = 0;
+  state.score = 0;
+
+  showScreen(3);
+  renderEvent();
+};
+
+// ==============================================================
+// SCREEN 3 — 危机事件渲染                                          =
+// ==============================================================
+function renderEvent() {
+  const evtIdx = state.eventOrder[state.currentEventIdx];
+  const evt = EVENTS[evtIdx];
+
+  $('eventIcon').textContent = evt.icon;
+  $('eventTitle').innerHTML = evt.title.replace(/\n/g, '<br>');
+  $('eventDesc').textContent = '';
+
+  // 轮次指示器
+  const dots = $('roundIndicator').querySelectorAll('.round-dot');
+  dots.forEach((d, i) => {
+    d.className = 'round-dot';
+    if (i < state.currentEventIdx) d.classList.add('done');
+    if (i === state.currentEventIdx) d.classList.add('current');
+  });
+
+  // 隐藏得分弹窗
+  $('scorePop').style.display = 'none';
+
+  // 渲染选项
+  const optContainer = $('eventOptions');
+  optContainer.innerHTML = '';
+
+  const attrLabels = {
+    ai: 'AI', factory: '产能', trade: '国际化', efficiency: '效率',
+  };
+
+  evt.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+
+    // 属性标签
+    let tagHtml = '';
+    if (opt.attr && attrLabels[opt.attr]) {
+      tagHtml = `<span class="option-tag tag-${opt.attr}">${attrLabels[opt.attr]}</span>`;
+    }
+
+    btn.innerHTML = `${tagHtml}${opt.text}`;
+    btn.addEventListener('click', () => handleOption(opt));
+    optContainer.appendChild(btn);
+  });
+}
+
+// ==============================================================
+// SCREEN 3 — 处理选项选择                                          =
+// ==============================================================
+function handleOption(option) {
+  playSfx('sfxClick');
+
+  // 计算得分
+  let score = option.baseScore;
+  let bonusFrom = null;
+
+  if (option.attr) {
+    // 检查队伍是否有对应属性的人物
+    for (const charId of state.selectedChars) {
+      const char = ASSETS.chars[charId];
+      if (char && char.attr === option.attr) {
+        score += 3;
+        bonusFrom = char.name;
+        break;
+      }
+    }
+  }
+
+  state.score += score;
+
+  // 显示得分弹窗
+  let popText = '+' + score + ' 分';
+  if (bonusFrom) {
+    popText += '<br><small>' + bonusFrom + ' 属性加成 +3</small>';
+  }
+  $('scorePop').innerHTML = popText;
+  $('scorePop').style.display = 'block';
+  // 重新触发动画
+  $('scorePop').style.animation = 'none';
+  $('scorePop').offsetHeight; // 强制回流
+  $('scorePop').style.animation = 'popIn 0.4s ease-out';
+
+  // 禁用选项按钮
+  document.querySelectorAll('#eventOptions .option-btn').forEach(b => {
+    b.disabled = true;
+    b.style.opacity = '0.5';
+  });
+
+  // 延迟进入下一轮
+  setTimeout(() => {
+    state.currentEventIdx++;
+    if (state.currentEventIdx >= 3) {
+      // 3轮结束 → Screen 4
+      showScreen(4);
+      startAnimation();
+    } else {
+      renderEvent();
+    }
+  }, 1200);
+}
+
+// ==============================================================
+// SCREEN 4 — 交付动画                                              =
+// ==============================================================
+function startAnimation() {
+  const container = $('animContent');
+  const stages = [
+    {
+      // 用户素材替换点：动画第1帧 - 机器人装车
+      emoji: '📦',
+      text: '机器人正在装车...<br><small>500台AI助手整装待发</small>',
+      sfx: null,
+    },
+    {
+      // 用户素材替换点：动画第2帧 - 深圳地标
+      emoji: '🏙️',
+      text: '途经深圳地标<br><small>湾区速度，使命必达</small>',
+      sfx: null,
+    },
+    {
+      // 用户素材替换点：动画第3帧 - APEC会场
+      emoji: '🏛️',
+      text: '抵达APEC会场<br><small>21个经济体代表齐聚</small>',
+      sfx: null,
+    },
+    {
+      // 用户素材替换点：动画第4帧 - 机器人亮相
+      emoji: '🤖',
+      text: '"Welcome to Shenzhen！"<br><small>AI智能接待助手已就位</small>',
+      sfx: 'sfxSuccess',
+    },
+  ];
+
+  let stageIdx = 0;
+
+  function showStage() {
+    if (stageIdx >= stages.length) {
+      // 动画结束 → 显示评分
+      showFinalStars();
+      return;
+    }
+
+    const st = stages[stageIdx];
+    if (st.sfx) playSfx(st.sfx);
+
+    container.innerHTML = `
+      <div class="anim-stage">
+        <div style="font-size:80px;margin-bottom:16px">${st.emoji}</div>
+        <!-- 用户素材替换点：如需使用图片代替emoji，替换上方div为： -->
+        <!-- <img class="anim-img" src="assets/images/anim-frame${stageIdx+1}.png" alt=""> -->
+        <div class="anim-text">${st.text}</div>
+      </div>
+    `;
+
+    stageIdx++;
+    setTimeout(showStage, 1800);
+  }
+
+  showStage();
+}
+
+function showFinalStars() {
+  $('animContent').innerHTML = `
+    <div class="anim-stage">
+      <div style="font-size:60px;margin-bottom:8px">🤖</div>
+      <div class="game-title" style="font-size:12px">交付成功！</div>
+      <div class="stars">⭐⭐⭐⭐⭐</div>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px">嘉宾一致好评</p>
+      <button class="btn" style="margin-top:20px" onclick="goToResult()">
+        查看成绩 ▼
+      </button>
+    </div>
+  `;
+}
+
+window.goToResult = function() {
+  playSfx('sfxClick');
+  showScreen(5);
+  showResult();
+};
+
+// ==============================================================
+// SCREEN 5 — 结算展示                                              =
+// ==============================================================
+function showResult() {
+  // 计算称号
+  const title = TITLES.find(t => state.score >= t.min) || TITLES[TITLES.length - 1];
+
+  $('resultTitle').textContent = title.name;
+  $('resultScore').textContent = '总分：' + state.score + ' / 39';
+
+  // 随机展示一个表情包（如果有的话）
+  const emojiDiv = $('emojiDisplay');
+  const randomEmoji = ASSETS.emojis[Math.floor(Math.random() * ASSETS.emojis.length)];
+  emojiDiv.innerHTML = `
+    <!-- 用户素材替换点：结算页表情包 -->
+    <img src="${randomEmoji}" alt="" style="width:64px;height:64px;image-rendering:pixelated;object-fit:contain"
+         onerror="this.style.display='none'">
+  `;
+}
+
+// ==============================================================
+// Canvas 海报生成（简单版：称号 + 图标）                           =
+// ==============================================================
+window.generatePoster = function() {
+  playSfx('sfxPoster');
+  playSfx('sfxClick');
+
+  const canvas = $('posterCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;   // 750
+  const H = canvas.height;  // 1000
+
+  const title = TITLES.find(t => state.score >= t.min) || TITLES[TITLES.length - 1];
+
+  // --- 背景 ---
+  // 深色像素风背景
+  ctx.fillStyle = '#0d0d1a';
+  ctx.fillRect(0, 0, W, H);
+
+  // 像素网格装饰
+  ctx.fillStyle = 'rgba(0, 229, 255, 0.03)';
+  for (let x = 0; x < W; x += 20) {
+    for (let y = 0; y < H; y += 20) {
+      ctx.fillRect(x, y, 18, 18);
+    }
+  }
+
+  // --- 顶部装饰条 ---
+  ctx.fillStyle = '#00e5ff';
+  ctx.fillRect(0, 0, W, 8);
+
+  // --- 标题文字（在机器人图标下方） ---
+  ctx.fillStyle = '#ffd740';
+  ctx.font = 'bold 48px "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(title.name, W / 2, 300);
+
+  // --- 机器人小图标 ---
+  // 用户素材替换点：海报中的机器人图标
+  const robotImg = new Image();
+  robotImg.src = ASSETS.robot;
+  robotImg.onload = function() {
+    drawPosterContent(ctx, W, H, title, robotImg);
+  };
+  robotImg.onerror = function() {
+    // 图片加载失败，继续生成不含图标的海报
+    drawPosterContent(ctx, W, H, title, null);
+  };
+};
+
+function drawPosterContent(ctx, W, H, title, robotImg) {
+  // --- 机器人图标 ---
+  if (robotImg) {
+    // 画机器人像素头像（居中，160×160）
+    const imgSize = 160;
+    ctx.drawImage(robotImg, (W - imgSize) / 2, 80, imgSize, imgSize);
+  } else {
+    // 图片加载失败，用 emoji 文字代替
+    ctx.font = '80px sans-serif';
+    ctx.fillText('🤖', W / 2, 200);
+  }
+
+  // --- 分隔线 ---
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(100, 350);
+  ctx.lineTo(W - 100, 350);
+  ctx.stroke();
+
+  // --- 分数 ---
+  ctx.fillStyle = '#e0e0e0';
+  ctx.font = '28px "PingFang SC", "Hiragino Sans GB", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('总分：' + state.score + ' / 39', W / 2, 410);
+
+  // --- 队伍成员 ---
+  const charNames = state.selectedChars.map(id => ASSETS.chars[id]?.name || id);
+  ctx.fillStyle = '#888';
+  ctx.font = '22px "PingFang SC", "Hiragino Sans GB", sans-serif';
+  ctx.fillText('队员：' + charNames.join(' · '), W / 2, 470);
+
+  ctx.fillText('APEC × 深圳 特别行动', W / 2, 560);
+
+  // --- 底部 ---
+  ctx.fillStyle = '#00e5ff';
+  ctx.fillRect(0, H - 8, W, 8);
+
+  ctx.fillStyle = '#555';
+  ctx.font = '16px "PingFang SC", "Hiragino Sans GB", sans-serif';
+  ctx.fillText('APEC AI 特别行动队 · 2026', W / 2, H - 30);
+
+  // --- 导出图片 ---
+  exportPoster();
+}
+
+function exportPoster() {
+  const canvas = $('posterCanvas');
+  canvas.toBlob(function(blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'APEC-AI海报.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // 移动端：尝试触发分享
+    if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
+      const file = new File([blob], 'APEC-AI海报.png', { type: 'image/png' });
+      navigator.share({
+        title: 'APEC AI 特别行动队',
+        text: '我在APEC AI特别行动队中获得了「' + (TITLES.find(t => state.score >= t.min)?.name || '') + '」！',
+        files: [file],
+      }).catch(() => {});
+    }
+  }, 'image/png');
+}
+
+// ==============================================================
+// 重新挑战                                                        =
+// ==============================================================
+window.restartGame = function() {
+  playSfx('sfxClick');
+  state.screen = 1;
+  state.selectedChars = [];
+  state.score = 0;
+  state.eventOrder = [];
+  state.currentEventIdx = 0;
+
+  // 重置人物卡状态
+  document.querySelectorAll('.char-card').forEach(c => {
+    c.classList.remove('selected', 'unselectable');
+  });
+  $('btnTeamConfirm').disabled = true;
+  updateCharCounter();
+
+  // 重置轮次指示器
+  document.querySelectorAll('#roundIndicator .round-dot').forEach(d => {
+    d.className = 'round-dot';
+  });
+
+  // 回到第一屏
+  showScreen(1);
+};
+
+// ==============================================================
+// 初始化                                                          =
+// ==============================================================
+// 加载 Screen1 背景（可选）
+(function init() {
+  // 尝试预加载第一屏背景图
+  const bgImg = new Image();
+  bgImg.src = ASSETS.bg[0];
+  bgImg.onload = function() {
+    // 背景图加载成功，设为 Screen1 背景
+    screens.s1.style.backgroundImage = 'url(' + ASSETS.bg[0] + ')';
+    screens.s1.style.backgroundSize = 'cover';
+    screens.s1.style.backgroundPosition = 'center';
+  };
+  // 失败则保持纯色背景，不影响游戏
+
+  // 桌面端悬停音效（可选）
+  console.log('🤖 APEC AI 特别行动队 准备就绪');
+  console.log('  素材路径：assets/images/ 和 assets/audio/');
+  console.log('  修改素材：打开 index.html 搜索"用户素材替换点"');
+})();
+
+})(); // end IIFE
+</script>
+</body>
+</html>
